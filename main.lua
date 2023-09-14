@@ -1,6 +1,7 @@
 --need to implement websocket
 --main lua script to talk to python
 
+--#region script setup (variables, client to server connection)
 console.log('Init')
 
 --read and store two main bytes for position (x-coordinate of camera)
@@ -8,7 +9,10 @@ position = mainmemory.read_u16_be(0xEE00)
 --"score" of AI-player, used for feedback
 fitness = 0
 
---moves player right
+
+--#endregion
+
+--#region movement functions
 function holdingRight (holding)
     joypad.set({Right=holding}, 1)
 end
@@ -25,8 +29,10 @@ end
 function updateFitness ()
     fitness = position
 end
+--#endregion
 
---main script loop
+
+--#region main
 while true do
     position = mainmemory.read_u16_be(0xEE00)
 
@@ -43,4 +49,4 @@ while true do
     --make emulator go to next frame (rather than waiting for script to end)
     emu.frameadvance()
 end
-
+--#endregion
