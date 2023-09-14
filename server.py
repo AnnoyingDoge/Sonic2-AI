@@ -1,4 +1,5 @@
 #webserver will receieve fitness data, position data, level data, etc. then we can write training stuff in python
+#requires websockets (pip install websockets)
 
 import asyncio
 import websockets

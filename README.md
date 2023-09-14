@@ -1,4 +1,4 @@
-#Sonic 2 AI
+# Sonic 2 AI
 
 Requirements:
 
