@@ -1,3 +1,6 @@
+--need to implement websocket
+--main lua script to talk to python
+
 console.log('Init')
 
 --read and store two main bytes for position (x-coordinate of camera)
@@ -6,8 +9,16 @@ position = mainmemory.read_u16_be(0xEE00)
 fitness = 0
 
 --moves player right
-function moveRight ()
-    joypad.set({Right=true, B=true}, 1)
+function holdingRight (holding)
+    joypad.set({Right=holding}, 1)
+end
+
+function holdingLeft ()
+    joypad.set({Left=holding})
+end
+
+function holdingJump()
+    joypad.set({A=holding})
 end
 
 --update fitness score
