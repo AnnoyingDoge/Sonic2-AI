@@ -10,6 +10,7 @@ function moveRight ()
     joypad.set({Right=true, B=true}, 1)
 end
 
+--update fitness score
 function updateFitness ()
     fitness = position
 end
@@ -18,13 +19,17 @@ end
 while true do
     position = mainmemory.read_u16_be(0xEE00)
 
+    --only update fitness when we get further than previous
     if position > fitness then
         updateFitness()
     end
 
+
+    --gui text for reading information
     gui.text(50, 150, 'Position ' .. tostring(position))
     gui.text(50, 200, 'Fitness ' .. tostring(fitness))
 
+    --make emulator go to next frame (rather than waiting for script to end)
     emu.frameadvance()
 end
 
