@@ -6,6 +6,10 @@ using System.Windows.Forms;
 using BizHawk.Client.Common;
 using BizHawk.Client.EmuHawk;
 
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+
 namespace Net.MyStuff.CSharpTool
 {
     [ExternalTool("CSharpTool")] // this appears in the Tools > External Tools submenu in EmuHawk
@@ -47,6 +51,7 @@ namespace Net.MyStuff.CSharpTool
             Controls.Add(startRight);
             ResumeLayout(performLayout: false);
             PerformLayout();
+
         }
 
         /// <summary>
@@ -110,6 +115,7 @@ namespace Net.MyStuff.CSharpTool
         public override void Restart()
         {
             // executed once after the constructor, and again every time a rom is loaded or reloaded
+            loadSaveState();
         }
 
         // executed after every frame (except while turboing, use FastUpdateAfter for that)
@@ -123,6 +129,33 @@ namespace Net.MyStuff.CSharpTool
 
             //Draw GUI stuff so we can see what's going on
             DrawGUIElements();   
+        }
+    }
+
+    class WebClient
+    {
+        public WebClient()
+        {
+            main();
+        }
+        async void main()
+        {
+            using (var ws = new ClientWebSocket())
+            {
+                //connect
+                await ws.ConnectAsync(new Uri("ws://localhost:8001/ws"), CancellationToken.None);
+                //buffer stuff ??? for receiving a message
+                var buffer = new byte[256];
+                var buffer_segment = new ArraySegment<byte>(buffer);
+
+                //message to send
+                var byteArray = new ArraySegment<byte>(Encoding.ASCII.GetBytes("a"));
+                while (ws.State == WebSocketState.Open)
+                {
+                    //send a message
+                    await ws.SendAsync(byteArray, WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+            }
         }
     }
 }
