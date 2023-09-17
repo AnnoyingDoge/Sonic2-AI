@@ -5,12 +5,18 @@
 import asyncio
 import websockets
 
+
+
 #coroutine that manages a connection
 async def handler(websocket):
+    message = "msg";
+    last_message = "";
     while True:
         #receive and print a message forever!
         message = await websocket.recv()
-        print(message)
+        if last_message != message:
+            print(message)
+            last_message = message;
 
 
 async def main():
