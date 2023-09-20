@@ -153,6 +153,7 @@ namespace Net.MyStuff.CSharpTool
     
     class WebClient
     {
+        //stuff to connect / send
         private Uri uri = new Uri("ws://localhost:8001/ws");
         private string message = "msg";
         private ArraySegment<byte> messageBytes;
@@ -176,6 +177,10 @@ namespace Net.MyStuff.CSharpTool
         }
         #endregion
 
+        /// <summary>
+        /// update the message being sent
+        /// </summary>
+        /// <param name="message"> update message being sent</param>
         public void UpdateMessage(string message)
         {
             this.message = message;
