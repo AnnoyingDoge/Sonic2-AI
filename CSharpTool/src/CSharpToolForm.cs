@@ -9,6 +9,7 @@ using BizHawk.Client.EmuHawk;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace Net.MyStuff.CSharpTool
 {
@@ -22,6 +23,8 @@ namespace Net.MyStuff.CSharpTool
 
         int position = 0;
         int fitness = 0;
+
+        int waitForReset = 0;
 
         WebClient webClient = new WebClient();
 
@@ -68,12 +71,16 @@ namespace Net.MyStuff.CSharpTool
         /// </summary>
         private void RestartButton_Click(object sender, EventArgs e)
         {
+            waitForReset = 1;
             loadSaveState();
+            position = 0;
+            fitness = 0;
+            waitForReset = 0;
         }
 
         private void ConnectButton_Click(object sender, EventArgs e)
         {
-            webClient.UpdateMessage(fitness.ToString());
+            //webClient.UpdateMessage(fitness.ToString());
             webClient.Run();
         }
 
@@ -142,8 +149,8 @@ namespace Net.MyStuff.CSharpTool
             if (position > fitness)
             {
                 fitness = position;
-                webClient.UpdateMessage(fitness.ToString());
             }
+            webClient.makePacket(new int[] { fitness, position, waitForReset });
 
             //Draw GUI stuff so we can see what's going on
             DrawGUIElements();   
@@ -177,6 +184,39 @@ namespace Net.MyStuff.CSharpTool
         }
         #endregion
 
+        public void makePacket(int[] data)
+        {
+            //packet we build
+            List<byte> packet = new List<byte>();
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                //add 4 byte pattern before message
+                for(int j = 0; j < 4; j++)
+                {
+                    packet.Add(byte.MaxValue);
+                }
+
+                //bytes of int
+                byte[] byteArr = BitConverter.GetBytes(data[i]);
+
+                //reverse to big endian if we are in little endian
+                if (BitConverter.IsLittleEndian)
+                    Array.Reverse(byteArr);
+
+                //put all bytes into message
+                foreach (byte b in byteArr)
+                {
+                    packet.Add(b);
+                }
+            }
+
+            //convert packet to arraysegment
+            messageBytes = new ArraySegment<byte>(packet.ToArray());
+
+
+        }
+
         /// <summary>
         /// update the message being sent
         /// </summary>
@@ -205,7 +245,7 @@ namespace Net.MyStuff.CSharpTool
                 while (ws.State == WebSocketState.Open)
                 {
                     //send a message
-                    await ws.SendAsync(messageBytes, WebSocketMessageType.Text, true, CancellationToken.None);
+                    await ws.SendAsync(messageBytes, WebSocketMessageType.Binary, true, CancellationToken.None);
                 }
             }
         }
