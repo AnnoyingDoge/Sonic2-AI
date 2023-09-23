@@ -7,16 +7,71 @@ import websockets
 
 def unpackage(packet: bytes):
     isInt = False
+    isString = False
     values = []
-    for i in range(0, len(packet), 4):
-        #if we have int upcoming, read as int and store in list
+    
+    i = 0
+    while(i < len(packet)):
         if isInt:
             intBytes = packet[i], packet[i+1], packet[i+2], packet[i+3]
             values.append(int.from_bytes(intBytes, "big"))
             isInt = False
-        #int identification packet == (255,255,255,255)
+            i+=4
+        if isString:
+            endIndex = -1
+            #search for end index
+            for j in range(i, len(packet)):
+                print(j)
+                #end of string marked by 0
+                if packet[j] == 0:
+                    endIndex = j
+                #once found, break loop
+                if endIndex != -1:
+                    break
+            stringBytes = packet[i:j]
+            values.append(str(stringBytes, 'UTF-8'))
+            i+=endIndex-i
+        
+        #int identification bytes == (255,255,255,255)
         if packet[i] == 255 and (packet[i] == packet[i+1] == packet[i+2] == packet[i+3]):
             isInt = True
+            i+=4
+
+        #string identification bytes == (255,255,255,0)
+        elif packet[i] == 255 and (packet[i] == packet[i+1] == packet[i+2]) and packet[i+3] == 0:
+            isString = True
+            i+=4
+
+
+    # for i in range(0, len(packet), 4):
+    #     #if we have int upcoming, read as int and store in list
+    #     if isInt:
+    #         intBytes = packet[i], packet[i+1], packet[i+2], packet[i+3]
+    #         values.append(int.from_bytes(intBytes, "big"))
+    #         isInt = False
+
+    #     if isString:
+    #         endIndex = -1
+    #         #search for end index
+    #         for j in range(i, len(packet)):
+    #             print(j)
+    #             #end of string marked by 0
+    #             if packet[j] == 0:
+    #                 endIndex = j
+    #             #once found, break loop
+    #             if endIndex != -1:
+    #                 break
+    #         stringBytes = packet[i:j]
+    #         values.append(str(stringBytes, 'UTF-8'))
+
+    #     #int identification bytes == (255,255,255,255)
+    #     if packet[i] == 255 and (packet[i] == packet[i+1] == packet[i+2] == packet[i+3]):
+    #         isInt = True
+
+    #     #string identification bytes == (255,255,255,0)
+    #     elif packet[i] == 255 and (packet[i] == packet[i+1] == packet[i+2]) and packet[i+3] == 0:
+    #         isString = True
+
     return values
 
 

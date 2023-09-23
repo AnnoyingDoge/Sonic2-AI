@@ -150,7 +150,7 @@ namespace Net.MyStuff.CSharpTool
             {
                 fitness = position;
             }
-            webClient.makePacket(new int[] { fitness, position, waitForReset });
+            webClient.makePacket(new int[] { fitness, position, waitForReset }, new string[] { "a", "b" });
 
             //Draw GUI stuff so we can see what's going on
             DrawGUIElements();   
@@ -184,14 +184,14 @@ namespace Net.MyStuff.CSharpTool
         }
         #endregion
 
-        public void makePacket(int[] data)
+        public void makePacket(int[] data, string[] strings)
         {
             //packet we build
             List<byte> packet = new List<byte>();
 
             for (int i = 0; i < data.Length; i++)
             {
-                //add 4 byte pattern before message
+                //add 4 byte pattern before integers
                 for(int j = 0; j < 4; j++)
                 {
                     packet.Add(byte.MaxValue);
@@ -211,6 +211,28 @@ namespace Net.MyStuff.CSharpTool
                 }
             }
 
+            //strings
+            for (int i = 0; i < strings.Length; i++)
+            {
+                //add 4 byte pattern before strings
+                for (int j = 0; j < 3; j++)
+                {
+                    packet.Add(byte.MaxValue);
+                }
+                packet.Add(byte.MinValue);
+
+                //bytes of string
+                byte[] byteArr = Encoding.UTF8.GetBytes(strings[i]);
+
+                //put all bytes into message
+                foreach (byte b in byteArr)
+                {
+                    packet.Add(b);
+                }
+            }
+
+
+
             //convert packet to arraysegment
             messageBytes = new ArraySegment<byte>(packet.ToArray());
 
@@ -224,7 +246,7 @@ namespace Net.MyStuff.CSharpTool
         public void UpdateMessage(string message)
         {
             this.message = message;
-            messageBytes = new ArraySegment<byte>(Encoding.ASCII.GetBytes(message));
+            messageBytes = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
         }
 
         public void Run()
