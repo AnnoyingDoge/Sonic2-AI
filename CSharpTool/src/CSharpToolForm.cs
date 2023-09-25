@@ -10,6 +10,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Net.MyStuff.CSharpTool
 {
@@ -40,7 +41,9 @@ namespace Net.MyStuff.CSharpTool
         Button startRight = new Button() { AutoSize = true, Text = "Hold Right", Location = new Point(100, 50) };
 
 
+        dpadDirection dpadDir = dpadDirection.NONE;
 
+        public static string message ="";
 
         public CSharpToolForm()
         {
@@ -110,6 +113,7 @@ namespace Net.MyStuff.CSharpTool
         {
             APIs.Gui.Text(50, 75, "Position: " + position);
             APIs.Gui.Text(50, 50, "Fitness : " + fitness);
+            APIs.Gui.Text(50, 100, message);
         }
 
         /// <summary>
@@ -150,10 +154,24 @@ namespace Net.MyStuff.CSharpTool
             {
                 fitness = position;
             }
-            webClient.makePacket(new int[] { fitness, position, waitForReset }, new string[] { "a", "b" });
+            webClient.makePacket(new int[] { fitness, position, waitForReset });
 
             //Draw GUI stuff so we can see what's going on
             DrawGUIElements();   
+        }
+
+        public void dpadUpdate(dpadDirection d)
+        {
+            dpadDir = d;
+        }
+
+        public enum dpadDirection
+        {
+            NONE = 0,
+            LEFT = 1, 
+            RIGHT = 2,
+            UP = 3,
+            DOWN = 4
         }
     }
 
@@ -184,7 +202,7 @@ namespace Net.MyStuff.CSharpTool
         }
         #endregion
 
-        public void makePacket(int[] data, string[] strings)
+        public void makePacket(int[] data)
         {
             //packet we build
             List<byte> packet = new List<byte>();
@@ -211,25 +229,26 @@ namespace Net.MyStuff.CSharpTool
                 }
             }
 
-            //strings
-            for (int i = 0; i < strings.Length; i++)
-            {
-                //add 4 byte pattern before strings
-                for (int j = 0; j < 3; j++)
-                {
-                    packet.Add(byte.MaxValue);
-                }
-                packet.Add(byte.MinValue);
+            ////strings
+            //for (int i = 0; i < strings.Length; i++)
+            //{
+            //    //add 4 byte pattern before strings
+            //    for (int j = 0; j < 3; j++)
+            //    {
+            //        packet.Add(byte.MaxValue);
+            //    }
+            //    packet.Add(byte.MinValue);
 
-                //bytes of string
-                byte[] byteArr = Encoding.UTF8.GetBytes(strings[i]);
+            //    //bytes of string
+            //    byte[] byteArr = Encoding.UTF8.GetBytes(strings[i]);
 
-                //put all bytes into message
-                foreach (byte b in byteArr)
-                {
-                    packet.Add(b);
-                }
-            }
+            //    //put all bytes into message
+            //    foreach (byte b in byteArr)
+            //    {
+            //        packet.Add(b);
+            //    }
+
+            //}
 
 
 
@@ -251,10 +270,10 @@ namespace Net.MyStuff.CSharpTool
 
         public void Run()
         {
-            Connect();
+            _ = Connect();
         }
 
-        async void Connect()
+        async Task<int> Connect()
         {
             using (var ws = new ClientWebSocket())
             {
@@ -268,8 +287,18 @@ namespace Net.MyStuff.CSharpTool
                 {
                     //send a message
                     await ws.SendAsync(messageBytes, WebSocketMessageType.Binary, true, CancellationToken.None);
+                    
+                    await ws.ReceiveAsync(buffer_segment, CancellationToken.None);
+
+                    Console.WriteLine(buffer_segment);
+
+                    CSharpToolForm.message = buffer_segment.Array[0].ToString();
+
+                    buffer_segment = new ArraySegment<byte>(buffer);
                 }
             }
+
+            return 0;
         }
     }
 }
