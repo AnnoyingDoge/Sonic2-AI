@@ -12,3 +12,5 @@ def dpad(direction: str):
     else:
         return 0
     
+def input_string(dpad_dir: int, pressing_button: bool):
+    return f'{dpad_dir}|{pressing_button}'

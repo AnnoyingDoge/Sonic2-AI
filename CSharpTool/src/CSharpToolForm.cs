@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Net.MyStuff.CSharpTool
 {
@@ -41,9 +42,12 @@ namespace Net.MyStuff.CSharpTool
         Button startRight = new Button() { AutoSize = true, Text = "Hold Right", Location = new Point(100, 50) };
 
 
-        dpadDirection dpadDir = dpadDirection.NONE;
+        
 
-        public static string message ="";
+        private string inputMessage = "";
+
+        dpadDirection dpadDir = dpadDirection.NONE;
+        private bool jumpBool = false;
 
         public CSharpToolForm()
         {
@@ -113,7 +117,8 @@ namespace Net.MyStuff.CSharpTool
         {
             APIs.Gui.Text(50, 75, "Position: " + position);
             APIs.Gui.Text(50, 50, "Fitness : " + fitness);
-            APIs.Gui.Text(50, 100, message);
+            APIs.Gui.Text(50, 100, inputMessage);
+            APIs.Gui.Text(50, 125, dpadDir.ToString() + " " + jumpBool);
         }
 
         /// <summary>
@@ -149,6 +154,7 @@ namespace Net.MyStuff.CSharpTool
         {
             position = (int)GetCameraPosition();
 
+
             //fitness increases when position is greater than fitness, i.e. fitness score = furthest position
             if (position > fitness)
             {
@@ -156,8 +162,68 @@ namespace Net.MyStuff.CSharpTool
             }
             webClient.makePacket(new int[] { fitness, position, waitForReset });
 
+            //get input stuff from websocket
+            inputMessage = webClient.getMessage();
+
+            parseInputMessage(inputMessage);
+
+            doInputs();
+
             //Draw GUI stuff so we can see what's going on
-            DrawGUIElements();   
+            DrawGUIElements();
+        }
+
+        /// <summary>
+        /// Take an input message from websocket and turn into enum and boolean
+        /// </summary>
+        /// <param name="msg"></param>
+        public void parseInputMessage(string msg)
+        {
+            int splitIndex = -1;
+            for(int i = 0; i < msg.Length; i++)
+            {
+                if (msg[i].Equals('|'))
+                {
+                    splitIndex = i;
+                    break;
+                }
+            }
+            if(splitIndex != -1)
+            {
+                string[] parts = msg.Split('|');
+                Int32.TryParse(parts[0], out int i);
+                dpadDir = (dpadDirection)(i);
+                Boolean.TryParse(parts[1], out bool b);
+                jumpBool = b;
+            }
+        }
+
+        private void doInputs()
+        {
+            bool move = true;
+            string dpad = "Up";
+            switch (dpadDir)
+            {
+                case dpadDirection.NONE:
+                    move = false;
+                    break;
+                case dpadDirection.LEFT:
+                    dpad = "Left";
+                    break;
+                case dpadDirection.RIGHT:
+                    dpad = "Right";
+                    break;
+                case dpadDirection.UP:
+                    dpad = "Up";
+                    break;
+                case dpadDirection.DOWN:
+                    dpad = "Down";
+                    break;
+            }
+
+            APIs.Joypad.Set(dpad, move, 1);
+            APIs.Joypad.Set("A", jumpBool, 1);
+
         }
 
         public void dpadUpdate(dpadDirection d)
@@ -182,6 +248,8 @@ namespace Net.MyStuff.CSharpTool
         private Uri uri = new Uri("ws://localhost:8001/ws");
         private string message = "msg";
         private ArraySegment<byte> messageBytes;
+
+        private string receivedMessage = "";
 
         #region constructors
         public WebClient()
@@ -268,6 +336,11 @@ namespace Net.MyStuff.CSharpTool
             messageBytes = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
         }
 
+        public string getMessage()
+        {
+            return receivedMessage;
+        }
+
         public void Run()
         {
             _ = Connect();
@@ -288,11 +361,14 @@ namespace Net.MyStuff.CSharpTool
                     //send a message
                     await ws.SendAsync(messageBytes, WebSocketMessageType.Binary, true, CancellationToken.None);
                     
-                    await ws.ReceiveAsync(buffer_segment, CancellationToken.None);
+                    WebSocketReceiveResult received = await ws.ReceiveAsync(buffer_segment, CancellationToken.None);
 
-                    Console.WriteLine(buffer_segment);
-
-                    CSharpToolForm.message = buffer_segment.Array[0].ToString();
+                    byte[] receivedBytes = new byte[received.Count];
+                    for(int i = 0; i < received.Count; i++)
+                    {
+                        receivedBytes[i] = buffer_segment.Array[i];
+                    }
+                    receivedMessage = Encoding.UTF8.GetString(receivedBytes);
 
                     buffer_segment = new ArraySegment<byte>(buffer);
                 }

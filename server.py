@@ -5,6 +5,11 @@
 import asyncio
 import websockets
 
+input_string = f'{0}|{False}'
+
+def update_input(str):
+    input_string = str
+
 def unpackage(packet: bytes):
     isInt = False
     isString = False
@@ -58,7 +63,7 @@ async def handler(websocket):
         if last_message != message:
             print(unpackage(message))
             last_message = message
-        await websocket.send('g')
+        await websocket.send(input_string)
 
 
 async def main():

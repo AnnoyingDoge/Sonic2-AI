@@ -1,3 +1,4 @@
+import subprocess
 #will look something like this
 
 #setup training
@@ -5,9 +6,10 @@
 #wait
 
 #run webserver
-with open("server.py") as server_file:
-    exec(server_file.read())
+server = subprocess.run(["python", "server.py"], capture_output=False, text=True)
+with open("input.py") as input_script:
+    exec(input_script.read())
 
-#wait for lua connection
+print(server.stdout)
 
 #train
