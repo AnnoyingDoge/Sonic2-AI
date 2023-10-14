@@ -352,7 +352,7 @@ namespace Net.MyStuff.CSharpTool
             {
                 //connect
                 await ws.ConnectAsync(uri, CancellationToken.None);
-                //buffer stuff ??? for receiving a message
+                //buffer stuff for receiving a message
                 var buffer = new byte[256];
                 var buffer_segment = new ArraySegment<byte>(buffer);
 
@@ -363,11 +363,13 @@ namespace Net.MyStuff.CSharpTool
                     
                     WebSocketReceiveResult received = await ws.ReceiveAsync(buffer_segment, CancellationToken.None);
 
+                    //get rid of extra bytes on message
                     byte[] receivedBytes = new byte[received.Count];
                     for(int i = 0; i < received.Count; i++)
                     {
                         receivedBytes[i] = buffer_segment.Array[i];
                     }
+                    //convert resulting message to string
                     receivedMessage = Encoding.UTF8.GetString(receivedBytes);
 
                     buffer_segment = new ArraySegment<byte>(buffer);
