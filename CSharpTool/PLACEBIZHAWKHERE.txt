@@ -1,1 +1,0 @@
-Place your BizHawk folder here!! Make sure it's named "BizHawk"

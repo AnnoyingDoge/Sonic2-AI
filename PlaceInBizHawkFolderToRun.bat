@@ -1,1 +1,0 @@
-.\EmuHawk.exe --open-ext-tool-dll=CSharpTool
